@@ -1,0 +1,18 @@
+product_id,product_name,category,base_price,growth_factor,data_disclaimer
+PRD_E101,Paytm Soundbox 4.0 Pro,Electronics,1499.0,1.2,Demo dataset — synthetic data
+PRD_E102,Paytm Card POS Terminal Neo,Electronics,4999.0,1.15,Demo dataset — synthetic data
+PRD_E103,Paytm Smart All-in-One POS,Electronics,8499.0,1.25,Demo dataset — synthetic data
+PRD_E104,Wireless Barcode Scanner BT,Electronics,1899.0,1.1,Demo dataset — synthetic data
+PRD_E105,Dynamic Display QR Standee,Electronics,1299.0,1.18,Demo dataset — synthetic data
+PRD_A201,Soundbox Replacement Battery,Accessories,499.0,0.85,Demo dataset — synthetic data
+PRD_A202,POS Charging Cradle Dock,Accessories,699.0,0.88,Demo dataset — synthetic data
+PRD_A203,Thermal Receipt Rolls (Pack of 10),Accessories,299.0,0.92,Demo dataset — synthetic data
+PRD_A204,Heavy Duty POS Lanyard Strap,Accessories,149.0,0.8,Demo dataset — synthetic data
+PRD_A205,Bluetooth Audio Dongle Mini,Accessories,399.0,0.75,Demo dataset — synthetic data
+PRD_M301,Acrylic QR Standee - Dual Bank,Merchant Essentials,349.0,1.05,Demo dataset — synthetic data
+PRD_M302,Voice Box Mounting Bracket,Merchant Essentials,249.0,1.02,Demo dataset — synthetic data
+PRD_M303,Cash Drawer 4-Slot Auto-Open,Merchant Essentials,2299.0,1.08,Demo dataset — synthetic data
+PRD_M304,Merchant Branding Banner Kit,Merchant Essentials,599.0,1.01,Demo dataset — synthetic data
+PRD_S401,Paytm Business Prime Subscription,Software & Services,999.0,1.12,Demo dataset — synthetic data
+PRD_S402,Automated Tally Accounting Sync,Software & Services,1499.0,1.15,Demo dataset — synthetic data
+PRD_S403,Priority Settlement Annual Plan,Software & Services,1999.0,1.1,Demo dataset — synthetic data

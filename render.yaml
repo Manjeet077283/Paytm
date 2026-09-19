@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: paytm-workmate-backend
+    env: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        value: mongodb+srv://nikhilkumaarrr30_db_user:nikhil%40335500@sih.u3i9buo.mongodb.net/paytm_workmate?retryWrites=true&w=majority&appName=SIH
+      - key: GEMINI_API_KEY
+        value: AQ.Ab8RN6JTfBRjWzt8xWBWhbuxOcVKtoak4KlfX4yaRH4NfuTatQ
+      - key: LLM_MODEL
+        value: gemini-2.5-flash
+      - key: LLM_PROVIDER
+        value: gemini
+      - key: JWT_SECRET
+        value: paytm_workmate_super_secret_jwt_key_2025_secure

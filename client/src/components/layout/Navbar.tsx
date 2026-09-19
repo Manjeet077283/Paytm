@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bot, Play, CheckCircle2, ShieldAlert, BarChart3, History, Settings, Sparkles, Database, Menu, X } from 'lucide-react';
+import { Bot, Play, CheckCircle2, ShieldAlert, BarChart3, History, Settings, Sparkles, LogOut, LogIn, Menu, X } from 'lucide-react';
 import { useSocket } from '../../context/SocketContext';
 
 interface NavbarProps {
@@ -7,13 +7,19 @@ interface NavbarProps {
   onNavigate: (page: string, params?: any) => void;
   pendingApprovalsCount?: number;
   onLaunchDemo?: () => void;
+  isAuthenticated?: boolean;
+  currentUser?: any;
+  onLogout?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentPage,
   onNavigate,
   pendingApprovalsCount = 0,
-  onLaunchDemo
+  onLaunchDemo,
+  isAuthenticated = false,
+  currentUser,
+  onLogout
 }) => {
   const { isConnected } = useSocket();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -35,6 +41,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   const handleNavClick = (id: string) => {
     onNavigate(id);
     setMobileMenuOpen(false);
+  };
+
+  const getInitials = (name?: string) => {
+    if (!name) return 'VJ';
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
   return (
@@ -110,15 +123,44 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            {/* User Profile Avatar */}
-            <div
-              onClick={() => handleNavClick('settings')}
-              className="flex items-center space-x-2 pl-1 cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-full bg-[#00BAF2]/20 border border-[#00BAF2] flex items-center justify-center text-xs font-extrabold text-[#00BAF2]">
-                VJ
+            {/* Authentication Action */}
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2 pl-1">
+                {/* User Profile Avatar */}
+                <div
+                  onClick={() => handleNavClick('settings')}
+                  className="flex items-center space-x-2 cursor-pointer group"
+                  title={`${currentUser?.name || 'User'} (${currentUser?.role || 'Team Member'})`}
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#00BAF2]/20 border border-[#00BAF2] flex items-center justify-center text-xs font-extrabold text-[#00BAF2] group-hover:scale-105 transition-transform">
+                    {getInitials(currentUser?.name)}
+                  </div>
+                  <div className="hidden xl:block text-left leading-tight">
+                    <p className="text-xs font-bold text-white truncate max-w-[110px]">{currentUser?.name || 'User'}</p>
+                    <p className="text-[10px] text-blue-200/80 truncate max-w-[110px]">{currentUser?.role || 'Analyst'}</p>
+                  </div>
+                </div>
+
+                {/* Logout Button */}
+                {onLogout && (
+                  <button
+                    onClick={onLogout}
+                    className="p-1.5 text-blue-200 hover:text-rose-300 hover:bg-rose-500/20 rounded-lg transition-all"
+                    title="Sign Out"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-            </div>
+            ) : (
+              <button
+                onClick={() => handleNavClick('login')}
+                className="flex items-center space-x-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-lg border border-white/20 transition-all"
+              >
+                <LogIn className="w-3.5 h-3.5 text-[#00BAF2]" />
+                <span>Sign In</span>
+              </button>
+            )}
 
             {/* Mobile Menu Hamburger Button */}
             <button
@@ -160,6 +202,30 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             );
           })}
+
+          {/* Mobile Auth button */}
+          <div className="pt-2 border-t border-blue-900/60">
+            {isAuthenticated ? (
+              <button
+                onClick={() => {
+                  if (onLogout) onLogout();
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-bold text-rose-300 hover:bg-rose-500/20 transition-all"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out ({currentUser?.name || 'User'})</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => handleNavClick('login')}
+                className="w-full flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-[#00BAF2] text-[#002970]"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Sign In to Workspace</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
     </header>

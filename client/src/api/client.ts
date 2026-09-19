@@ -3,10 +3,19 @@ import { TaskRecord, ApprovalRequest, ExecutionLog, ReportMetadata } from '../ty
 const RAW_URL = (import.meta.env.VITE_API_URL || '').trim();
 const API_BASE = RAW_URL ? `${RAW_URL.replace(/\/$/, '')}/api` : '/api';
 
+function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
+  const headers: Record<string, string> = { ...extraHeaders };
+  const token = localStorage.getItem('paytm_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 export const api = {
-  // Tasks
-  async createTask(params: { goal: string; autonomyMode?: string; isDemo?: boolean; datasetFilename?: string }): Promise<{ success: boolean; task: TaskRecord }> {
-    const res = await fetch(`${API_BASE}/tasks`, {
+  // Authentication
+  async register(params: { name: string; email: string; password: string; role?: string }): Promise<{ success: boolean; token?: string; user?: any; error?: string }> {
+    const res = await fetch(`${API_BASE}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
@@ -14,36 +23,79 @@ export const api = {
     return res.json();
   },
 
+  async login(params: { email: string; password: string }): Promise<{ success: boolean; token?: string; user?: any; error?: string }> {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
+    return res.json();
+  },
+
+  async getMe(): Promise<{ success: boolean; user?: any; error?: string }> {
+    const res = await fetch(`${API_BASE}/auth/me`, {
+      headers: getAuthHeaders()
+    });
+    return res.json();
+  },
+
+  logout() {
+    localStorage.removeItem('paytm_token');
+    localStorage.removeItem('paytm_user');
+  },
+
+  // Tasks
+  async createTask(params: { goal: string; autonomyMode?: string; isDemo?: boolean; datasetFilename?: string }): Promise<{ success: boolean; task: TaskRecord }> {
+    const res = await fetch(`${API_BASE}/tasks`, {
+      method: 'POST',
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(params)
+    });
+    return res.json();
+  },
+
   async getTasks(): Promise<{ success: boolean; tasks: TaskRecord[] }> {
-    const res = await fetch(`${API_BASE}/tasks`);
+    const res = await fetch(`${API_BASE}/tasks`, {
+      headers: getAuthHeaders()
+    });
     return res.json();
   },
 
   async getTask(id: string): Promise<{ success: boolean; task: TaskRecord }> {
-    const res = await fetch(`${API_BASE}/tasks/${id}`);
+    const res = await fetch(`${API_BASE}/tasks/${id}`, {
+      headers: getAuthHeaders()
+    });
     return res.json();
   },
 
   async runTask(id: string): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${API_BASE}/tasks/${id}/run`, { method: 'POST' });
+    const res = await fetch(`${API_BASE}/tasks/${id}/run`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
     return res.json();
   },
 
   async cancelTask(id: string): Promise<{ success: boolean; task: TaskRecord }> {
-    const res = await fetch(`${API_BASE}/tasks/${id}/cancel`, { method: 'POST' });
+    const res = await fetch(`${API_BASE}/tasks/${id}/cancel`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
     return res.json();
   },
 
   // Approvals
   async getApprovals(): Promise<{ success: boolean; approvals: ApprovalRequest[] }> {
-    const res = await fetch(`${API_BASE}/approvals`);
+    const res = await fetch(`${API_BASE}/approvals`, {
+      headers: getAuthHeaders()
+    });
     return res.json();
   },
 
   async approveAction(id: string, comments?: string): Promise<{ success: boolean; message: string }> {
     const res = await fetch(`${API_BASE}/approvals/${id}/approve`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ comments })
     });
     return res.json();
@@ -52,7 +104,7 @@ export const api = {
   async rejectAction(id: string, comments?: string): Promise<{ success: boolean; message: string }> {
     const res = await fetch(`${API_BASE}/approvals/${id}/reject`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ comments })
     });
     return res.json();
@@ -60,7 +112,9 @@ export const api = {
 
   // Reports
   async getReport(taskId: string): Promise<{ success: boolean; report: ReportMetadata }> {
-    const res = await fetch(`${API_BASE}/reports/${taskId}`);
+    const res = await fetch(`${API_BASE}/reports/${taskId}`, {
+      headers: getAuthHeaders()
+    });
     return res.json();
   },
 
@@ -74,24 +128,32 @@ export const api = {
 
   // Audit Logs
   async getAuditLogs(): Promise<{ success: boolean; logs: ExecutionLog[]; total: number }> {
-    const res = await fetch(`${API_BASE}/audit-logs`);
+    const res = await fetch(`${API_BASE}/audit-logs`, {
+      headers: getAuthHeaders()
+    });
     return res.json();
   },
 
   async getTaskLogs(taskId: string): Promise<{ success: boolean; logs: ExecutionLog[] }> {
-    const res = await fetch(`${API_BASE}/audit-logs/task/${taskId}`);
+    const res = await fetch(`${API_BASE}/audit-logs/task/${taskId}`, {
+      headers: getAuthHeaders()
+    });
     return res.json();
   },
 
   // Impact
   async getImpact(): Promise<{ success: boolean; metrics: any }> {
-    const res = await fetch(`${API_BASE}/impact`);
+    const res = await fetch(`${API_BASE}/impact`, {
+      headers: getAuthHeaders()
+    });
     return res.json();
   },
 
   // Tools
   async getTools(): Promise<{ success: boolean; tools: any[] }> {
-    const res = await fetch(`${API_BASE}/tools`);
+    const res = await fetch(`${API_BASE}/tools`, {
+      headers: getAuthHeaders()
+    });
     return res.json();
   },
 
@@ -101,6 +163,7 @@ export const api = {
     formData.append('dataset', file);
     const res = await fetch(`${API_BASE}/upload`, {
       method: 'POST',
+      headers: getAuthHeaders(),
       body: formData
     });
     return res.json();

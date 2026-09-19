@@ -80,25 +80,58 @@ const ReportSchema = new Schema(
   { timestamps: true, strict: false }
 );
 
+export interface UserRecord {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  role: string;
+}
+
+const UserSchema = new Schema(
+  {
+    id: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true, index: true },
+    passwordHash: { type: String, required: true },
+    role: { type: String, default: 'Business Analyst' }
+  },
+  { timestamps: true }
+);
+
+const inMemoryUsers = new Map<string, UserRecord>();
+
 let TaskModel: mongoose.Model<any>;
 let LogModel: mongoose.Model<any>;
 let ApprovalModel: mongoose.Model<any>;
 let ReportModel: mongoose.Model<any>;
+let UserModel: mongoose.Model<any>;
 
 try {
   TaskModel = mongoose.model('Task', TaskSchema);
   LogModel = mongoose.model('ExecutionLog', LogSchema);
   ApprovalModel = mongoose.model('Approval', ApprovalSchema);
   ReportModel = mongoose.model('Report', ReportSchema);
+  UserModel = mongoose.model('User', UserSchema);
 } catch (e) {
   // Model already registered
   TaskModel = mongoose.models.Task;
   LogModel = mongoose.models.ExecutionLog;
   ApprovalModel = mongoose.models.Approval;
   ReportModel = mongoose.models.Report;
+  UserModel = mongoose.models.User;
 }
 
 export async function initDatabase(): Promise<void> {
+  // Seed in-memory demo user
+  inMemoryUsers.set('executive@paytm.com', {
+    id: 'USR_DEMO_01',
+    name: 'Vaibhav Jain',
+    email: 'executive@paytm.com',
+    passwordHash: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // paytm123
+    role: 'VP of Product & Operations'
+  });
+
   const uri = CONFIG.MONGODB_URI;
 
   // Mask credentials for clean logging
@@ -127,6 +160,10 @@ export async function initDatabase(): Promise<void> {
       const existingTasks = await TaskModel.find({}).limit(50).lean();
       existingTasks.forEach((t: any) => inMemoryTasks.set(t.id, t));
       console.log(`📦 [Paytm WorkMate DB] Synced ${existingTasks.length} tasks from MongoDB Atlas.`);
+
+      const existingUsers = await UserModel.find({}).limit(100).lean();
+      existingUsers.forEach((u: any) => inMemoryUsers.set(u.email.toLowerCase(), u as UserRecord));
+      console.log(`👤 [Paytm WorkMate DB] Synced ${existingUsers.length} users from MongoDB Atlas.`);
     } catch (syncErr) {
       // Non-critical
     }
@@ -310,12 +347,60 @@ export const Storage = {
     return null;
   },
 
+  // Users
+  async saveUser(user: UserRecord): Promise<UserRecord> {
+    inMemoryUsers.set(user.email.toLowerCase(), { ...user });
+    if (isMongoConnected) {
+      try {
+        await UserModel.findOneAndUpdate(
+          { email: user.email.toLowerCase() },
+          { ...user, email: user.email.toLowerCase() },
+          { upsert: true, new: true }
+        );
+      } catch (err) {
+        console.warn('MongoDB User save warning:', err);
+      }
+    }
+    return user;
+  },
+
+  async getUserByEmail(email: string): Promise<UserRecord | null> {
+    const normalized = email.toLowerCase().trim();
+    const user = inMemoryUsers.get(normalized);
+    if (user) return { ...user };
+
+    if (isMongoConnected) {
+      try {
+        const doc: any = await UserModel.findOne({ email: normalized }).lean();
+        if (doc) {
+          inMemoryUsers.set(normalized, doc as UserRecord);
+          return doc as UserRecord;
+        }
+      } catch (err) {}
+    }
+    return null;
+  },
+
+  async getUserById(id: string): Promise<UserRecord | null> {
+    for (const u of inMemoryUsers.values()) {
+      if (u.id === id) return { ...u };
+    }
+    if (isMongoConnected) {
+      try {
+        const doc: any = await UserModel.findOne({ id }).lean();
+        if (doc) return doc as UserRecord;
+      } catch (err) {}
+    }
+    return null;
+  },
+
   getDbStatus() {
     return {
       connected: isMongoConnected,
       mode: isMongoConnected ? 'MongoDB Atlas (Connected)' : 'Resilient In-Memory Storage',
       taskCount: inMemoryTasks.size,
-      logCount: inMemoryLogs.length
+      logCount: inMemoryLogs.length,
+      userCount: inMemoryUsers.size
     };
   }
 };
